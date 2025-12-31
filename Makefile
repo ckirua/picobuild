@@ -13,9 +13,10 @@ help:
 	@echo "  help    - Show this help message"
 	@echo "  build   - Build the package"
 	@echo "  clean   - Clean the build and dist directories"
+	@echo "  check   - Check code style, formatting, and type safety"
 	@echo "  install - Install the package"
 	@echo "  test    - Run unit tests"
-	@echo "  check   - Check code style, formatting, and type safety"
+	@echo "  wheel   - Build the package as a wheel"
 
 build:
 	@$(PYTHON) setup.py build_ext --inplace
@@ -55,3 +56,10 @@ install:
 
 test:
 	@$(PYTHON) -m unittest discover -s $(TEST_DIR) -p "test_*.py" -v
+
+wheel:
+	@if ! $(PYTHON) -m pip show build > /dev/null 2>&1; then \
+		echo "Installing 'build' module..."; \
+		$(PYTHON) -m pip install build; \
+	fi
+	@$(PYTHON) -m build --outdir build/release/
