@@ -67,4 +67,4 @@ wheel:
 		echo "Installing 'build' module..."; \
 		$(PYTHON) -m pip install build; \
 	fi
-	@$(PYTHON) -m build --outdir $(BUILD_DIR)release/
+	@$(PYTHON) -m build --outdir $(BUILD_DIR)dist/
