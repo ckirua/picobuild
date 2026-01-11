@@ -1,38 +1,31 @@
 import subprocess
 import sysconfig
-from pathlib import Path
 
 from Cython.Compiler import Options as CythonOptions
 from Cython.Compiler.Main import compile as cython_compile
 from Cython.Compiler.Options import CompilationOptions
 
-_PATH_PREAMBLE = """\
-import sys as _sys
-for _p in {paths!r}:
-    if _p not in _sys.path:
-        _sys.path.insert(0, _p)
-del _sys, _p
+# pylint: disable=pointless-string-statement
 """
+# TODO
+*Cython*
+This is embedded, doesnt require env activation to be run.
+TODO:
+    - cythonize is better option i think
+    - maebe a class CythonExecutable with methods:
+        - build
+        - compile
+    - add moar args
 
+*C*
+Issa not embedded, activate env to run.
+TODO:
+    - c file generator
+    - compile (think is same as cython)
 
-def _inject_preamble(source_file: str, paths: list[str]) -> str:
-    """
-    Create a temporary file with sys.path preamble injected.
-    Paths are resolved to absolute paths at build time.
-    Returns path to the temp file.
-    """
-    # Resolve relative paths to absolute at build time
-    source_dir = Path(source_file).resolve().parent
-    resolved_paths = [str((source_dir / p).resolve()) for p in paths]
-
-    preamble = _PATH_PREAMBLE.format(paths=resolved_paths)
-    source_path = Path(source_file)
-    content = source_path.read_text()
-
-    # Create temp file in same directory to preserve relative imports
-    temp_file = source_path.with_name(f"_pico_{source_path.name}")
-    temp_file.write_text(preamble + content)
-    return str(temp_file)
+*Impl*
+    - shall i clean cy/c files after executable is done? idkidk
+"""
 
 
 def _cythonize_executable(source_file: str, dest_file: str = None):
@@ -73,35 +66,18 @@ def _build_cython_executable(c_file: str, dest_file: str):
     subprocess.run(cmd, check=True)
 
 
-def build_cython_executable(
-    source_file: str,
-    dest_file: str = None,
-    *,
-    paths: list[str] | None = None,
-):
+def build_cython_executable(source_file: str, dest_file: str = None):
     """
     Build a standalone executable from a Python source file.
 
     Args:
         source_file: Python source file (e.g., "hello.py")
         dest_file: Output executable path (e.g., "hello"). If None, derived from source_file.
-        paths: List of paths (relative to source_file) to add to sys.path at runtime.
-               These are resolved to absolute paths at build time.
-               Example: ["../../picolib/src", "../src"]
     """
     if dest_file is None:
         dest_file = source_file.removesuffix(".py")
 
-    temp_file = None
-    actual_source = source_file
-    if paths:
-        temp_file = _inject_preamble(source_file, paths)
-        actual_source = temp_file
+    c_file = f"{dest_file}.c"
 
-    try:
-        c_file = f"{dest_file}.c"
-        _cythonize_executable(actual_source, c_file)
-        _build_cython_executable(c_file, dest_file)
-    finally:
-        if temp_file:
-            Path(temp_file).unlink(missing_ok=True)
+    _cythonize_executable(source_file, c_file)
+    _build_cython_executable(c_file, dest_file)
