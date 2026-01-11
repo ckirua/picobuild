@@ -9,6 +9,8 @@ from Cython.Compiler.Options import CompilationOptions
 """
 # TODO
 *Cython*
+This is embedded, doesnt require env activation to be run.
+TODO:
     - cythonize is better option i think
     - maebe a class CythonExecutable with methods:
         - build
@@ -16,6 +18,8 @@ from Cython.Compiler.Options import CompilationOptions
     - add moar args
 
 *C*
+Issa not embedded, activate env to run.
+TODO:
     - c file generator
     - compile (think is same as cython)
 
