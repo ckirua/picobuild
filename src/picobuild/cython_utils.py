@@ -6,7 +6,14 @@ from setuptools import Extension
 
 
 def get_cython_build_dir(build_dir: str = "build"):
+    """
+    Get the build directory for the given build directory.
+    Args:
+        build_dir: The build directory.
+    Returns:
+        The build directory.
     # Example: build/cython.linux-x86_64-cpython-313
+    """
     plat = platform.system().lower()
     machine = platform.machine().lower()
     py_version = f"{sys.version_info.major}{sys.version_info.minor}"
@@ -15,4 +22,13 @@ def get_cython_build_dir(build_dir: str = "build"):
 
 
 def cythonize(*args, **kwargs) -> list[Extension]:
-    return _cythonize(*args, **kwargs, build_dir=get_cython_build_dir())
+    """
+    Cythonize the given extensions.
+    Args:
+        *args: The extensions to cythonize.
+        **kwargs: The keyword arguments to pass to the cythonize function.
+    Returns:
+        The list of cythonized extensions.
+    """
+    build_dir: str = kwargs.pop("build_dir", "build")
+    return _cythonize(*args, **kwargs, build_dir=get_cython_build_dir(build_dir))
