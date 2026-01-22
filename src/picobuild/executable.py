@@ -1,5 +1,6 @@
 import subprocess
 import sysconfig
+from typing import Optional
 
 from Cython.Compiler import Options as CythonOptions
 from Cython.Compiler.Main import compile as cython_compile
@@ -26,6 +27,43 @@ TODO:
 *Impl*
     - shall i clean cy/c files after executable is done? idkidk
 """
+
+
+class ExecutableParameters:
+    """
+    Parameters for building a standalone executable from a Python source file.
+
+    Args:
+        source_file: Python source file (e.g., "hello.py")
+        build_dir: Output directory for the executable (e.g., "bin")
+        executable_name: Name of the executable (e.g., "hello")
+    """
+
+    def __init__(
+        self, source_file: str, build_dir: str, executable_name: Optional[str] = None
+    ):
+        """
+        Initialize the ExecutableParameters.
+
+        Args:
+            source_file: Python source file (e.g., "hello.py")
+            build_dir: Output directory for the executable (e.g., "bin")
+            executable_name: Name of the executable (e.g., "hello")
+        """
+        self._build_dir = build_dir
+
+        self._source_file = source_file
+        self._executable_name = executable_name or source_file.split("/")[
+            -1
+        ].removesuffix(".py")
+        self._executable_file = f"{self._build_dir}/{self._executable_name}"
+        self._c_file = f"{self._build_dir}/{self._executable_name}.c"
+
+    def as_tuple(self):
+        """
+        Return the source file and executable name as a tuple.
+        """
+        return (self._source_file, self._executable_file)
 
 
 def _cythonize_executable(source_file: str, dest_file: str = None):
