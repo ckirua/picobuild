@@ -9,8 +9,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 project = "picobuild"
 copyright = "picobuild authors"
 author = "ckirua"
-release = "0.0.4"
-version = "0.0.4"
+
+# Prefer package version when building from repo (multi-version docs)
+try:
+    from picobuild.__about__ import __version__
+    release = __version__
+    version = ".".join(__version__.split(".")[:2])  # X.Y
+except ImportError:
+    release = "0.0.4"
+    version = "0.0.4"
 
 extensions = [
     "sphinx.ext.autodoc",

@@ -1,6 +1,6 @@
-# Build Sphinx docs and deploy to GitHub Pages.
+# Build Sphinx docs for multiple versions and deploy to GitHub Pages.
+# Serves /latest/ (main) and /X.Y.Z/ for each recent tag. Root redirects to /latest/.
 # Enable in repo: Settings → Pages → Source: GitHub Actions.
-# Only this workflow should upload a pages artifact (one per run).
 
 name: Docs
 
@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -33,15 +35,46 @@ jobs:
       - name: Set up Python
         run: uv python install 3.14
 
-      - name: Build docs
+      - name: Build docs for all versions
         run: |
+          set -e
+          mkdir -p site
+
+          # Build latest from current ref (main)
           uv sync --extra dev
           uv run python -m sphinx -b html docs docs/_build/html
+          cp -r docs/_build/html site/latest
+
+          # Build each recent tag (v*), max 10
+          TAGS=$(git tag -l 'v*' 2>/dev/null | sort -V | tail -10)
+          for tag in $TAGS; do
+            ver=${tag#v}
+            git checkout "$tag" 2>/dev/null || true
+            if [ -d docs ] && [ -f docs/conf.py ]; then
+              uv sync --extra dev 2>/dev/null || true
+              uv run python -m sphinx -b html docs docs/_build/html 2>/dev/null || true
+              mkdir -p "site/$ver"
+              cp -r docs/_build/html/* "site/$ver/"
+            fi
+            git checkout -
+          done
+
+          # Root index: version picker + redirect to latest
+          VERS=$(for d in site/*/; do [ -d "$d" ] && basename "$d"; done | sort -Vr)
+          {
+            echo '<!DOCTYPE html><html><head><meta charset="utf-8">'
+            echo '<meta http-equiv="refresh" content="0; url=latest/">'
+            echo '<title>picobuild</title>'
+            echo '<style>body{font-family:system-ui,sans-serif;max-width:40em;margin:2em auto;padding:0 1em;line-height:1.5}a{color:#2980b9}ul{list-style:none;padding:0}li{margin:.5em 0}</style></head><body>'
+            echo '<h1>picobuild</h1><p>Redirecting to <a href="latest/">latest</a>…</p><p>Versions:</p><ul>'
+            for v in $VERS; do echo "<li><a href=\"$v/\">$v</a></li>"; done
+            echo '</ul></body></html>'
+          } > site/index.html
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/_build/html
+          path: site
 
   deploy:
     runs-on: ubuntu-latest
