@@ -15,6 +15,9 @@ dependencies = [
     "setuptools>=80.9.0",
 ]
 
+[project.optional-dependencies]
+dev = ["black", "build", "flake8", "isort", "mypy"]
+
 [tool.setuptools]
 include-package-data = true
 
