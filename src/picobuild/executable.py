@@ -1,3 +1,5 @@
+"""Build standalone executables from Python sources via Cython --embed and gcc."""
+
 import subprocess
 import sysconfig
 from typing import Optional
@@ -5,28 +7,6 @@ from typing import Optional
 from Cython.Compiler import Options as CythonOptions
 from Cython.Compiler.Main import compile as cython_compile
 from Cython.Compiler.Options import CompilationOptions
-
-# pylint: disable=pointless-string-statement
-"""
-# TODO
-*Cython*
-This is embedded, doesnt require env activation to be run.
-TODO:
-    - cythonize is better option i think
-    - maebe a class CythonExecutable with methods:
-        - build
-        - compile
-    - add moar args
-
-*C*
-Issa not embedded, activate env to run.
-TODO:
-    - c file generator
-    - compile (think is same as cython)
-
-*Impl*
-    - shall i clean cy/c files after executable is done? idkidk
-"""
 
 
 class ExecutableParameters:
@@ -59,18 +39,13 @@ class ExecutableParameters:
         self._executable_file = f"{self._build_dir}/{self._executable_name}"
         self._c_file = f"{self._build_dir}/{self._executable_name}.c"
 
-    def as_tuple(self):
-        """
-        Return the source file and executable name as a tuple.
-        """
+    def as_tuple(self) -> tuple[str, str]:
+        """Return (source_file, executable_path) for use with build_cython_executable."""
         return (self._source_file, self._executable_file)
 
 
-def _cythonize_executable(source_file: str, dest_file: str = None):
-    """
-    Cythonize the source_file to a C file suitable for embedding in a standalone executable.
-    Equivalent to: cython --embed hello.py -o bin/hello_cy.c
-    """
+def _cythonize_executable(source_file: str, dest_file: Optional[str] = None) -> None:
+    """Compile a Python file to C with Cython in embed mode (main entry point)."""
     # This is equivalent to --embed
     CythonOptions.embed = "main"
 
@@ -81,12 +56,8 @@ def _cythonize_executable(source_file: str, dest_file: str = None):
     cython_compile(source_file, options)
 
 
-def _build_cython_executable(c_file: str, dest_file: str):
-    """
-    Compile the C file to an executable using gcc.
-    Equivalent to: gcc bin/hello_cy.c -o bin/hello_cy \
-       $(python -c "import sysconfig as s; print(f'-I{s.get_path(\"include\")} -L{s.get_config_var(\"LIBDIR\")} -lpython{s.get_config_var(\"VERSION\")}')")
-    """
+def _build_cython_executable(c_file: str, dest_file: str) -> None:
+    """Compile the C file to an executable using gcc and the current Python's include/lib."""
     include_dir = sysconfig.get_path("include")
     lib_dir = sysconfig.get_config_var("LIBDIR")
     python_version = sysconfig.get_config_var("VERSION")
@@ -104,13 +75,16 @@ def _build_cython_executable(c_file: str, dest_file: str):
     subprocess.run(cmd, check=True)
 
 
-def build_cython_executable(source_file: str, dest_file: str = None):
-    """
-    Build a standalone executable from a Python source file.
+def build_cython_executable(
+    source_file: str, dest_file: Optional[str] = None
+) -> None:
+    """Build a standalone executable from a Python source file (Cython --embed + gcc).
 
     Args:
-        source_file: Python source file (e.g., "hello.py")
-        dest_file: Output executable path (e.g., "hello"). If None, derived from source_file.
+        source_file: Path to the Python source file (e.g. ``"hello.py"``).
+        dest_file: Path for the output executable. If None, derived from
+            source_file (same basename without .py). A ``.c`` file is created
+            alongside the executable during the build.
     """
     if dest_file is None:
         dest_file = source_file.removesuffix(".py")

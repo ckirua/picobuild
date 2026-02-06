@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["black", "build", "flake8", "isort", "mypy"]
+dev = ["black", "build", "Cython", "flake8", "isort", "mypy", "sphinx", "furo"]
 
 [tool.setuptools]
 include-package-data = true

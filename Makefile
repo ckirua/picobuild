@@ -3,7 +3,7 @@ PYTHON := python
 TEST_DIR := tests
 .DEFAULT_GOAL := help
 
-.PHONY: help build clean install test sync install-uv lock dist check
+.PHONY: help build clean install test sync install-uv lock dist check docs
 
 help:
 	@echo "picobuild Makefile"
@@ -16,6 +16,7 @@ help:
 	@echo "  install-uv - uv: sync, build, then editable install"
 	@echo "  lock       - uv: update uv.lock from pyproject.toml"
 	@echo "  dist       - sync + build sdist and wheel into dist/"
+	@echo "  docs       - Build Sphinx HTML docs in docs/_build/html"
 
 dist: sync
 	@$(UV) run python -m build --outdir dist
@@ -52,3 +53,6 @@ install-uv: sync
 
 lock:
 	@$(UV) lock
+
+docs:
+	@$(UV) run python -m sphinx -b html docs docs/_build/html
