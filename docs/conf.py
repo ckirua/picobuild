@@ -54,9 +54,8 @@ html_context = {
     "doc_versions": [v.strip() for v in _versions if v.strip()],
     "doc_base": _doc_base.rstrip("/"),
 }
-html_sidebars = {
-    "**": ["version_switcher.html", "localtoc.html", "relations.html", "sourcelink.html", "searchbox.html"],
-}
+# Version switcher is injected via _templates/versions.html (overrides theme's versions.html).
+# html_sidebars not used by sphinx_rtd_theme's layout.
 
 autodoc_default_options = {
     "members": True,

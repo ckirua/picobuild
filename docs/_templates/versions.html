@@ -1,0 +1,23 @@
+{%- if doc_versions|length > 1 and doc_base is defined -%}
+<div class="rst-versions" data-doc-base="{{ doc_base }}" data-pagename="{{ pagename }}" role="note" aria-label="Version switcher">
+  <span class="rst-current-version" style="padding: 0.5em 0; display: block; font-size: 0.9em; color: #666;">Version</span>
+  <select class="version-select" style="width: 100%; padding: 6px 8px; margin-bottom: 1em; font-size: 12px; border: 1px solid #ccc; border-radius: 3px;">
+    {%- for v in doc_versions -%}
+    <option value="{{ v }}"{% if v == current_version %} selected{% endif %}>{{ v }}</option>
+    {%- endfor -%}
+  </select>
+</div>
+<script>
+(function() {
+  var el = document.querySelector('.rst-versions[data-doc-base]');
+  if (!el) return;
+  var base = el.getAttribute('data-doc-base') || '';
+  var pagename = el.getAttribute('data-pagename') || 'index';
+  var sel = el.querySelector('.version-select');
+  if (sel) sel.onchange = function() {
+    var url = (base ? base + '/' : '/') + this.value + '/' + pagename + '.html';
+    window.location.href = url;
+  };
+})();
+</script>
+{%- endif -%}
