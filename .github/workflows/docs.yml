@@ -44,10 +44,14 @@ jobs:
           mkdir -p site
 
           # Version list for switcher: latest + recent tags (max 10)
+          # Support both vX.Y.Z and X.Y.Z tags (GitHub Releases can use either)
           TAGS=$(git tag -l 'v*' 2>/dev/null | sort -V | tail -10)
+          if [ -z "$TAGS" ]; then
+            TAGS=$(git tag -l '[0-9]*.*' 2>/dev/null | sort -V | tail -10)
+          fi
           VERS="latest"
           for tag in $TAGS; do VERS="$VERS ${tag#v}"; done
-          DOC_VERSIONS_LIST=$(echo "$VERS" | tr ' ' ',')
+          DOC_VERSIONS_LIST=$(echo "$VERS" | tr ' ' ',' | sed 's/,,*/,/g; s/^,//')
 
           # Build latest from current ref (main)
           export CURRENT_DOC_VERSION=latest
