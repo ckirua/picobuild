@@ -22,9 +22,20 @@ extensions = [
 templates_path = ["_templates"]
 exclude_patterns = []
 
-html_theme = "furo"
+html_theme = "sphinx_rtd_theme"
 html_static_path = []
 html_title = "picobuild"
+html_theme_options = {
+    "navigation_depth": 3,
+    "collapse_navigation": False,
+    "sticky_navigation": True,
+    "includehidden": True,
+    "display_version": True,
+    "prev_next_buttons_location": "bottom",
+    "style_external_links": True,
+}
+html_show_sphinx = False
+html_show_copyright = True
 
 autodoc_default_options = {
     "members": True,
