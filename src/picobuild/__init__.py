@@ -1,7 +1,7 @@
 from .__about__ import __version__
 from ._setuptools import Extension, find_packages, setup
 from .cython_utils import cythonize, get_cython_build_dir
-from .executable import build_cython_executable
+from .executable import ExecutableParameters, build_cython_executable
 
 __all__: tuple[str, ...] = (
     # About
@@ -15,4 +15,5 @@ __all__: tuple[str, ...] = (
     "setup",
     # Executable
     "build_cython_executable",
+    "ExecutableParameters",
 )
