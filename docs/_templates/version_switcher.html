@@ -1,0 +1,24 @@
+{%- if doc_versions|length > 1 and doc_base is defined -%}
+<div class="version-switcher" style="margin-bottom: 1rem;" data-doc-base="{{ doc_base }}" data-pagename="{{ pagename }}">
+  <label for="version-select" style="font-size: 0.9em; color: #666;">Version</label>
+  <select id="version-select" style="width: 100%; padding: 4px; margin-top: 2px;">
+    {%- for v in doc_versions -%}
+    <option value="{{ v }}"{% if v == current_version %} selected{% endif %}>{{ v }}</option>
+    {%- endfor -%}
+  </select>
+</div>
+<script>
+  (function() {
+    var el = document.querySelector('.version-switcher');
+    if (!el) return;
+    var base = el.getAttribute('data-doc-base') || '';
+    var pagename = el.getAttribute('data-pagename') || 'index';
+    document.getElementById('version-select').onchange = function() {
+      var ver = this.value;
+      var path = pagename + '.html';
+      var url = (base ? base + '/' : '/') + ver + '/' + path;
+      window.location.href = url;
+    };
+  })();
+</script>
+{%- endif -%}

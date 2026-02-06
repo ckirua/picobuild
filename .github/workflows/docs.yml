@@ -36,21 +36,35 @@ jobs:
         run: uv python install 3.14
 
       - name: Build docs for all versions
+        env:
+          DOC_VERSIONS_LIST: ""   # filled below
+          GITHUB_PAGES_BASE: /${{ github.event.repository.name }}
         run: |
           set -e
           mkdir -p site
 
+          # Version list for switcher: latest + recent tags (max 10)
+          TAGS=$(git tag -l 'v*' 2>/dev/null | sort -V | tail -10)
+          VERS="latest"
+          for tag in $TAGS; do VERS="$VERS ${tag#v}"; done
+          DOC_VERSIONS_LIST=$(echo "$VERS" | tr ' ' ',')
+
           # Build latest from current ref (main)
+          export CURRENT_DOC_VERSION=latest
+          export DOC_VERSIONS="$DOC_VERSIONS_LIST"
+          export GITHUB_PAGES_BASE
           uv sync --extra dev
           uv run python -m sphinx -b html docs docs/_build/html
           cp -r docs/_build/html site/latest
 
-          # Build each recent tag (v*), max 10
-          TAGS=$(git tag -l 'v*' 2>/dev/null | sort -V | tail -10)
+          # Build each recent tag (v*)
           for tag in $TAGS; do
             ver=${tag#v}
             git checkout "$tag" 2>/dev/null || true
             if [ -d docs ] && [ -f docs/conf.py ]; then
+              export CURRENT_DOC_VERSION="$ver"
+              export DOC_VERSIONS="$DOC_VERSIONS_LIST"
+              export GITHUB_PAGES_BASE
               uv sync --extra dev 2>/dev/null || true
               uv run python -m sphinx -b html docs docs/_build/html 2>/dev/null || true
               mkdir -p "site/$ver"
