@@ -15,25 +15,10 @@ help:
 	@echo "  sync       - uv: create venv and install deps (incl. dev)"
 	@echo "  install-uv - uv: sync, build, then editable install"
 	@echo "  lock       - uv: update uv.lock from pyproject.toml"
-	@echo "  dist       - sync + build sdist and wheel into dist/ (adds py tag for multi-version)"
+	@echo "  dist       - sync + build sdist and wheel into dist/"
 
 dist: sync
 	@$(UV) run python -m build --outdir dist
-	@py_tag=$$($(UV) run python -c "import sys; print(f'py{sys.version_info.major}{sys.version_info.minor}')"); \
-	for f in dist/*.tar.gz; do \
-	  [ -f "$$f" ] || continue; \
-	  base=$$(basename "$$f" .tar.gz); \
-	  case "$$base" in *-py[0-9][0-9][0-9]) continue ;; esac; \
-	  mv "$$f" "dist/$${base}-$${py_tag}.tar.gz"; \
-	  echo "dist/$${base}-$${py_tag}.tar.gz"; \
-	done; \
-	for f in dist/*.whl; do \
-	  [ -f "$$f" ] || continue; \
-	  base=$$(basename "$$f" .whl); \
-	  case "$$base" in *-$${py_tag}-*) continue ;; esac; \
-	  new=$$(echo "$$base" | sed "s/-py3-/-$${py_tag}-/; s/-cp3[0-9]-cp3[0-9]-/-$${py_tag}-/"); \
-	  [ "$$f" = "dist/$$new.whl" ] || { mv "$$f" "dist/$$new.whl"; echo "dist/$$new.whl"; }; \
-	done
 
 install: sync
 	@$(UV) pip install -e . --no-build-isolation

@@ -29,8 +29,26 @@ jobs:
       - name: Build dist (Python 3.13)
         run: UV_PYTHON=3.13 make dist
 
+      - name: Tag wheel for Python 3.13
+        run: |
+          for f in dist/*.whl; do
+            [ -f "$f" ] || continue
+            base=$(basename "$f" .whl)
+            new=$(echo "$base" | sed 's/-py3-/-py313-/; s/-cp3[0-9]-cp3[0-9]-/-py313-/')
+            [ "$f" = "dist/$new.whl" ] || mv "$f" "dist/$new.whl"
+          done
+
       - name: Build dist (Python 3.14)
         run: UV_PYTHON=3.14 make dist
+
+      - name: Tag wheel for Python 3.14
+        run: |
+          for f in dist/*.whl; do
+            [ -f "$f" ] || continue
+            base=$(basename "$f" .whl)
+            new=$(echo "$base" | sed 's/-py3-/-py314-/; s/-cp3[0-9]-cp3[0-9]-/-py314-/')
+            [ "$f" = "dist/$new.whl" ] || mv "$f" "dist/$new.whl"
+          done
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
