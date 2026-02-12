@@ -9,14 +9,20 @@ readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 authors = [{ name = "ckirua", email = "aquipongoalgo.dsz@gmail.com" }]
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dynamic = ["version"]
 dependencies = [
     "setuptools>=80.9.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/picops/picobuild"
+Documentation = "https://picops.github.io/picobuild"
+Repository = "https://github.com/picops/picobuild.git"
+Issues = "https://github.com/picops/picobuild/issues"
+
 [project.optional-dependencies]
-dev = ["black", "build", "Cython", "flake8", "isort", "mypy", "sphinx", "sphinx-rtd-theme"]
+dev = ["black", "build", "flake8", "isort", "mypy", "sphinx", "sphinx-rtd-theme"]
 
 [tool.setuptools]
 include-package-data = true
@@ -26,3 +32,8 @@ include-package-data = true
 
 [tool.setuptools.dynamic]
 version = { attr = "picobuild.__about__.__version__" }
+
+[tool.cibuildwheel]
+enable = ["cpython-freethreading"]
+build = "cp313-* cp314-* cp313t-* cp314t-*"
+build-frontend = "build[uv]"
