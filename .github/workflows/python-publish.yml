@@ -39,17 +39,26 @@ jobs:
           # -- SINGLE for py LOOP, reducing overhead --
 
           for py in "${ALL_VERSIONS[@]}"; do
-            # Install requirements (main and dev)
-            UV_PYTHON="$py" uv pip install -r requirements.txt
-            UV_PYTHON="$py" uv pip install -r requirements-dev.txt
+            echo "=== Building for Python $py ==="
+            
+            # Create venv for this Python version
+            VENV_PATH=".venv-$py"
+            uv venv "$VENV_PATH" --python "$py"
+            
+            # Activate by setting VIRTUAL_ENV and using uv with --python
+            export VIRTUAL_ENV="$(pwd)/$VENV_PATH"
+            
+            # Install requirements (main and dev) into this venv
+            uv pip install --python "$VENV_PATH" -r requirements.txt
+            uv pip install --python "$VENV_PATH" -r requirements-dev.txt
 
             # Build sdist only ONCE, on the highest version (non-threaded variant)
             if [[ "$py" == "${VERSIONS[-1]}" ]]; then
-              UV_PYTHON="$py" uv build --sdist --out-dir dist/"$py"
+              uv build --python "$VENV_PATH" --sdist --out-dir dist/"$py"
             fi
 
             # Always build the wheel for this interpreter
-            UV_PYTHON="$py" uv build --wheel --out-dir dist/"$py"
+            uv build --python "$VENV_PATH" --wheel --out-dir dist/"$py"
 
             # Move wheels to dist/ and give normalized manylinux tags
             tag="manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64"
@@ -75,6 +84,9 @@ jobs:
               # Remove wheel subdir if empty
               rmdir "dist/$py" 2>/dev/null || true
             fi
+            
+            # Clean up venv to save space
+            rm -rf "$VENV_PATH"
           done
 
           # Move sdist .tar.gz up to top dist/ if present
