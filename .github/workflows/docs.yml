@@ -44,26 +44,33 @@ jobs:
           export CURRENT_DOC_VERSION="latest"
           uv run --extra dev sphinx-build -b html docs site/latest
 
-          # 3. Build each tag
+          # 3. Build each tag in temporary clones
           for tag in $TAGS; do
             ver=${tag#v}
             echo "### Building version $ver ###"
-            git checkout "$tag"
             
-            # Check if docs exist for this specific tag
-            if [ -d docs ]; then
+            # Create temporary directory for this version
+            TMPDIR=$(mktemp -d)
+            
+            # Clone just this tag (shallow clone for speed)
+            git clone --depth 1 --branch "$tag" . "$TMPDIR"
+            
+            # Build if docs exist
+            if [ -d "$TMPDIR/docs" ]; then
+              cd "$TMPDIR"
               export CURRENT_DOC_VERSION="$ver"
-              # We use --no-sync to speed up if dependencies haven't changed much, 
-              # or just uv run to handle it on the fly
-              uv run --extra dev sphinx-build -b html docs "site/$ver" || true
+              uv run --extra dev sphinx-build -b html docs "$GITHUB_WORKSPACE/site/$ver" || echo "Warning: Build failed for $ver"
+              cd "$GITHUB_WORKSPACE"
+            else
+              echo "No docs/ directory in $tag, skipping"
             fi
+            
+            # Clean up temporary clone
+            rm -rf "$TMPDIR"
           done
-          
-          git checkout main
 
           # 4. Generate Root Redirect & Version Picker
-          # Get list of built directories in descending order
-          BUILT_VERS=$(ls -d site/*/ | xargs -n1 basename | sort -Vr)
+          BUILT_VERS=$(ls -d site/*/ 2>/dev/null | xargs -n1 basename | sort -Vr)
           
           cat <<EOF > site/index.html
           <!DOCTYPE html><html><head><meta charset="utf-8">
