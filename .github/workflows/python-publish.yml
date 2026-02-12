@@ -25,14 +25,61 @@ jobs:
 
       - name: Set up Python and build sdist
         run: |
-          uv python install 3.14
-          uv build --sdist --out-dir dist
+          # Create dist/ directory if it doesn't exist
+          mkdir -p dist
 
-      - name: Build manylinux / musllinux wheels
-        uses: pypa/cibuildwheel@v3.3.1
-        with:
-          output-dir: dist
-          extras: "uv"
+          # Define Python versions once (easy to edit/expand)
+          VERSIONS=(3.13 3.14)
+          T_SUFFIX="t"
+          ALL_VERSIONS=("${VERSIONS[@]}" "${VERSIONS[@]/%/$T_SUFFIX}")
+
+          # Install all CPython (and threaded) interpreters at once
+          uv python install "${ALL_VERSIONS[@]}"
+
+          # -- SINGLE for py LOOP, reducing overhead --
+
+          for py in "${ALL_VERSIONS[@]}"; do
+            # Install requirements (main and dev)
+            UV_PYTHON="$py" uv pip install -r requirements.txt
+            UV_PYTHON="$py" uv pip install -r requirements-dev.txt
+
+            # Build sdist only ONCE, on the highest version (non-threaded variant)
+            if [[ "$py" == "${VERSIONS[-1]}" ]]; then
+              UV_PYTHON="$py" uv build --sdist --out-dir dist/"$py"
+            fi
+
+            # Always build the wheel for this interpreter
+            UV_PYTHON="$py" uv build --wheel --out-dir dist/"$py"
+
+            # Move wheels to dist/ and give normalized manylinux tags
+            tag="manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64"
+            pyver="${py/./}"    # E.g., 3.13 → 313 or 3.13t → 313t
+            # Only proceed if directory and wheels exist
+            for wheel in dist/"$py"/*.whl 2>/dev/null || true; do
+              [ -e "$wheel" ] || continue
+              base=$(basename "$wheel")
+              if [[ "$base" =~ ^(.*)-cp${pyver}-cp${pyver}m-any\.whl$ ]]; then
+                newbase="${BASH_REMATCH[1]}-cp${pyver}-cp${pyver}-${tag}.whl"
+              elif [[ "$base" =~ ^(.*)-py3-none-any\.whl$ ]]; then
+                newbase="${BASH_REMATCH[1]}-cp${pyver}-cp${pyver}-${tag}.whl"
+              else
+                newbase="$base"
+              fi
+              mv "$wheel" "dist/$newbase"
+            done
+            # Remove wheel subdir if empty
+            [ -d "dist/$py" ] && rmdir "dist/$py" 2>/dev/null || true
+          done
+
+          # Move sdist .tar.gz up to top dist/ if present
+          highest_ver="${VERSIONS[-1]}"
+          sdist_dir="dist/$highest_ver"
+          for sdist in "$sdist_dir"/*.tar.gz 2>/dev/null || true; do
+            [ -e "$sdist" ] && mv "$sdist" dist/
+          done
+
+          # Remove all numbered subdirectories (and 't' variants) from dist/
+          find dist -mindepth 1 -maxdepth 1 -type d -regex 'dist/[0-9]+\.[0-9]+t*' -exec rm -rf {} +
 
       - name: Upload distributions
         uses: actions/upload-artifact@v4
